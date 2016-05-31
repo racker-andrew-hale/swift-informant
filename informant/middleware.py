@@ -33,6 +33,8 @@ class Informant(object):
                                       'GET,HEAD,POST,PUT,DELETE,COPY,OPTIONS')
         self.valid_methods = [s.strip().upper() for s in
                               self.valid_methods.split(',') if s.strip()]
+        self.skip_accounts = conf.get('skip_accounts', '')
+        self.skip_accounts = [s.strip() for s in self.skip_accounts.split(',')]
         self.prefix_accounts = conf.get('prefix_accounts', '')
         self.prefix_accounts = [s.strip() for s in
                                 self.prefix_accounts.split(',')]
@@ -134,20 +136,21 @@ class Informant(object):
                     except ValueError:
                         acct = None
                 metrics = []
-                name = "%s.%s.%s" % (stat_type, request_method,
-                                     status_int)
-                metrics.append("%s%s:1|c|@%s" %
-                               (self.metric_name_prepend, name,
-                                self.statsd_sample_rate))
-                metrics.append("%s%s:%d|ms|@%s" %
-                               (self.metric_name_prepend, name, duration,
-                                self.statsd_sample_rate))
-                metrics.append("%ssrt.%s:%d|ms|@%s" %
-                               (self.metric_name_prepend, name,
-                                start_response_time, self.statsd_sample_rate))
-                metrics.append("%stfer.%s:%s|c|@%s" %
-                               (self.metric_name_prepend, name, transferred,
-                                self.statsd_sample_rate))
+                if acct not in self.skip_accounts:
+                    name = "%s.%s.%s" % (stat_type, request_method,
+                                         status_int)
+                    metrics.append("%s%s:1|c|@%s" %
+                                   (self.metric_name_prepend, name,
+                                    self.statsd_sample_rate))
+                    metrics.append("%s%s:%d|ms|@%s" %
+                                   (self.metric_name_prepend, name, duration,
+                                    self.statsd_sample_rate))
+                    metrics.append("%ssrt.%s:%d|ms|@%s" %
+                                   (self.metric_name_prepend, name,
+                                    start_response_time, self.statsd_sample_rate))
+                    metrics.append("%stfer.%s:%s|c|@%s" %
+                                   (self.metric_name_prepend, name, transferred,
+                                    self.statsd_sample_rate))
                 if acct in self.prefix_accounts:
                     metrics.append("%s%s.%s.%s.%s:1|c|@%s" %
                                    (self.prefix_accounts_metric_prepend,
@@ -161,7 +164,8 @@ class Informant(object):
                                    (self.prefix_accounts_metric_prepend,
                                     acct, name, start_response_time,
                                     self.statsd_sample_rate))
-                self._send_events(metrics, self.combined_events)
+                if metrics:
+                    self._send_events(metrics, self.combined_events)
         except Exception:
             try:
                 self.logger.exception(_("Encountered error in statsd_event"))

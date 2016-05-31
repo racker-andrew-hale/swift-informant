@@ -19,9 +19,11 @@ use = egg:informant#informant
 #valid_http_methods = GET,HEAD,POST,PUT,DELETE,COPY
 # send multiple statsd events per packet as supported by statsdpy
 #combined_events = no
-#combine_key = \n 
+#combine_key = \n
 # List of accounts whos account string should be prefixed to metric names
-#prefix_accounts = AUTH_something, 
+#prefix_accounts = AUTH_something,
+# List of accounts which should not contribute to aggregate metrics
+#skip_accounts = AUTH_blabla,AUTH_asdf
 
 [filter:ratelimit]
 # Standard from Swift
